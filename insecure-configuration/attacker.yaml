@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internal-dashboard
+  namespace: attacker-namespace
+  labels:
+    app: internal-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: internal-dashboard
+  template:
+    metadata:
+      labels:
+        app: internal-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: viktoriastefanova/internal-dashboard:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+          name: http
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+
+---
+# Internal Dashboard Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-dashboard
+  namespace: attacker-namespace
+  labels:
+    app: internal-dashboard
+spec:
+  type: ClusterIP
+  selector:
+    app: internal-dashboard
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+    name: http

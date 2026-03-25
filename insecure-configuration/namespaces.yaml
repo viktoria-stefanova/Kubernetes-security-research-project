@@ -1,0 +1,18 @@
+# Target namespace - where the victim application runs
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: target-namespace
+  labels:
+    environment: production
+    team: backend
+
+---
+# Attacker namespace - simulated compromised namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: attacker-namespace
+  labels:
+    environment: staging
+    team: devops

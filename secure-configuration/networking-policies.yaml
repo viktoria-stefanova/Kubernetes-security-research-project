@@ -1,0 +1,66 @@
+# Default Deny All Ingress Traffic to Target Namespace
+# This blocks ALL incoming traffic by default
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: target-namespace
+spec:
+  podSelector: {}  # Applies to all pods in the namespace
+  policyTypes:
+  - Ingress
+
+---
+# Allow Intra-Namespace Communication
+# Pods in target-namespace can talk to each other
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: target-namespace
+spec:
+  podSelector: {}  # Applies to all pods
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}  # Allow from any pod in the same namespace
+
+---
+# Allow DNS Resolution
+# All pods need to reach kube-dns/CoreDNS for service discovery
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: target-namespace
+spec:
+  podSelector: {}  # Applies to all pods
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+---
+# Allow Egress to Same Namespace
+# Pods can make outbound connections within their namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-same-namespace
+  namespace: target-namespace
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector: {}  # To any pod in same namespace

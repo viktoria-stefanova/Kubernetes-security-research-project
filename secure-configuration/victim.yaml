@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-api
+  namespace: target-namespace
+  labels:
+    app: customer-api
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-api
+  template:
+    metadata:
+      labels:
+        app: customer-api
+        tier: backend
+    spec:
+      # Use restricted service account with no RBAC permissions
+      serviceAccountName: customer-api-sa
+      automountServiceAccountToken: false
+      # Pod-level security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: api-server
+        image: viktoriastefanova/victim-app-secure:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-credentials
+              key: api-key
+        # Container-level security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - name: customer-data
+          mountPath: /data
+          readOnly: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+      volumes:
+      - name: customer-data
+        secret:
+          secretName: customer-data
+
+---
+# Web Application Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-api
+  namespace: target-namespace
+  labels:
+    app: customer-api
+spec:
+  type: ClusterIP
+  selector:
+    app: customer-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http

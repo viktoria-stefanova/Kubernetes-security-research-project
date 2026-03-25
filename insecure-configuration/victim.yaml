@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-api
+  namespace: target-namespace
+  labels:
+    app: customer-api
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-api
+  template:
+    metadata:
+      labels:
+        app: customer-api
+        tier: backend
+    spec:
+      containers:
+      - name: api-server
+        image: viktoriastefanova/victim-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: customer-data
+          mountPath: /data
+          readOnly: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+      volumes:
+      - name: customer-data
+        configMap:
+          name: customer-data
+
+---
+# Web Application Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-api
+  namespace: target-namespace
+  labels:
+    app: customer-api
+spec:
+  type: ClusterIP
+  selector:
+    app: customer-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

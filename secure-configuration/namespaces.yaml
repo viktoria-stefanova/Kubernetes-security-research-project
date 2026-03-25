@@ -1,0 +1,31 @@
+# Secure Target Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: target-namespace
+  labels:
+    environment: production
+    team: backend
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+
+---
+# Secure Attacker Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: attacker-namespace
+  labels:
+    environment: staging
+    team: devops
+    # Pod Security Standards enforcement
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest

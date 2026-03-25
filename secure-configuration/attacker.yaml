@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internal-dashboard
+  namespace: attacker-namespace
+  labels:
+    app: internal-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: internal-dashboard
+  template:
+    metadata:
+      labels:
+        app: internal-dashboard
+    spec:
+      # Use restricted service account with no RBAC permissions
+      serviceAccountName: internal-dashboard-sa
+      automountServiceAccountToken: false
+      # Pod-level security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: dashboard
+        image: viktoriastefanova/internal-dashboard:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+          name: http
+        # Container-level security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+
+---
+# Internal Dashboard Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-dashboard
+  namespace: attacker-namespace
+  labels:
+    app: internal-dashboard
+spec:
+  type: ClusterIP
+  selector:
+    app: internal-dashboard
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+    name: http
